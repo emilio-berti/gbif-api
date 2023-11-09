@@ -1,3 +1,5 @@
+#!/bin/bash
+
 chdir="/home/eb97ziwi/gbif"
 downdir="$chdir/downloads/occurrences"
 secret_file="$chdir/gbif.secret"
@@ -8,6 +10,7 @@ function check_status() {
   echo $status
 }
 
+# read GBIF secret (same as password for GBIF account)
 pwd=$(cut "$secret_file" -d ',' -f 2)
 pwd=$(echo $pwd | cut -d ' ' -f 2)
 
@@ -28,7 +31,8 @@ do
     echo "  - $sp: already downloaded"
     continue
   fi
-  # request download
+
+  # request download -------------
   echo "  - $sp: request download"
   creator='{"creator": "emilio.berti",'
   address='"notificationAddresses": ["emilio.berti90@gmail.com"],'
@@ -39,7 +43,7 @@ do
   query=$(echo "$creator" "$address" "$send" "$format" $predicate)
   request="https://api.gbif.org/v1/occurrence/download/request"
   
-  # check status of request
+  # check status of request ---------------
   echo "  - Wait for download to be ready"
   id=$(curl -sD --include --user emilio.berti:"$pwd" --header "Content-Type: application/json" --data "$query" "$request")
   status=$(check_status "$id")
@@ -51,7 +55,7 @@ do
   summary=$(curl -Ss https://api.gbif.org/v1/occurrence/download/"$downdir")
   echo $summary | jq . > "$downdir"/"$area"/"$sp".log
   
-  # download and unzip
+  # download -----------------------
   echo "  - Download"
   curl -sS --location https://api.gbif.org/v1/occurrence/download/request/"$id".zip -o "$downdir"/"$sp".zip
   echo "  - Downloaded"
